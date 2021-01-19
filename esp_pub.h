@@ -11,6 +11,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/firmware.h>
 #include <linux/sched.h>
+#include <linux/timer.h>
 #include <net/mac80211.h>
 #include <net/cfg80211.h>
 #include <linux/version.h>
@@ -19,6 +20,16 @@
 // to support kernel < 2.6.28 there's no ieee80211_sta
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 28))
 #include <net/wireless.h>
+#endif
+
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(4, 7, 00))
+#define HAVE_KERNEL_TIMER_FUNCTION_TIMER_LIST
+#define IEEE80211_NUM_BANDS NUM_NL80211_BANDS
+#define IEEE80211_BAND_2GHZ NL80211_BAND_2GHZ
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 00))
+#define HAVE_KERNEL_TIMER_FUNCTION_TIMER_LIST
 #endif
 
 enum esp_sdio_state{

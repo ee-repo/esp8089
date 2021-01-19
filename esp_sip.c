@@ -196,23 +196,41 @@ static bool check_ac_tid(u8 *pkt, u8 ac, u8 tid)
 
         return false;
 }
-
-static void sip_recalc_credit_timeout(unsigned long data)
+#ifndef HAVE_KERNEL_TIMER_FUNCTION_TIMER_LIST
+/* static void sip_recalc_credit_timeout(unsigned long data)
 {
 	struct esp_sip *sip = (struct esp_sip *)data;
 
 	esp_dbg(ESP_DBG_ERROR, "rct");
 
-	sip_recalc_credit_claim(sip, 1);      /* recalc again */
+	sip_recalc_credit_claim(sip, 1);
+} */
+#else
+static void sip_recalc_credit_timeout(struct esp_sip *t)
+{
+        esp_dbg(ESP_DBG_ERROR, "rct");
+
+	sip_recalc_credit_claim(t, 1);      /* recalc again */
 }
+
+static void sip_recalc_credit_timeout_f(struct timer_list *tl)
+{
+	// esp_sip *t = from_timer(t, tl, credit_timer);
+        struct esp_sip *t = (struct esp_sip *)tl;
+	sip_recalc_credit_timeout(t);
+}
+#endif
 
 static void sip_recalc_credit_init(struct esp_sip *sip)
 {
 	atomic_set(&sip->credit_status, RECALC_CREDIT_DISABLE);  //set it disable
-
-	init_timer(&sip->credit_timer);
-	sip->credit_timer.data = (unsigned long)sip;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 00))
+        timer_setup(&sip->credit_timer,sip_recalc_credit_timeout_f,0);
+#else
+        init_timer(&sip->credit_timer);
 	sip->credit_timer.function = sip_recalc_credit_timeout;
+	sip->credit_timer.data = (unsigned long)sip;
+#endif
 }
 
 static int sip_recalc_credit_claim(struct esp_sip *sip, int force)
@@ -1612,10 +1630,10 @@ static int sip_parse_mac_rx_info(struct esp_sip *sip, struct esp_mac_rx_ctrl * m
         if (mac_ctrl->sig_mode) {
             // 2.6.27 has RX_FLAG_RADIOTAP in enum mac80211_rx_flags in include/net/mac80211.h
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29))                
-                rx_status->flag |= RX_FLAG_HT;
+                // rx_status->flag |= RX_FLAG_HT;
                 rx_status->rate_idx = mac_ctrl->MCS;
-                if(mac_ctrl->SGI)
-                        rx_status->flag |= RX_FLAG_SHORT_GI;
+                // if(mac_ctrl->SGI)
+                //         rx_status->flag |= RX_FLAG_SHORT_GI;
 #else
                 rx_status->rate_idx = esp_wmac_rate2idx(0xc);//ESP_RATE_54
 #endif

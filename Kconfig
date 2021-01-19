@@ -1,0 +1,11 @@
+config ESP8089
+	tristate "ESP8089 SDIO Wireless LAN driver"
+	depends on WLAN && MMC && CFG80211
+	depends on m
+	select WIRELESS_EXT
+	select WEXT_PRIV
+	---help---
+	This option enables support for ESP8089 SDIO drivers, such as
+	the wifi found on the 1st gen Intel Compute Stick, the CHIP
+	and many other Intel Atom and ARM based devices.
+	If built as a module, it will be called esp8089.
